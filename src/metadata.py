@@ -60,7 +60,7 @@ def clean_data(df):
 
 def main():
     st.set_page_config(layout="wide")
-    st.title("Excel Data Editor with Built-in Filters")
+    st.title("Metadata Editor")
     
     if os.path.exists(DEFAULT_FILE):
         try:
