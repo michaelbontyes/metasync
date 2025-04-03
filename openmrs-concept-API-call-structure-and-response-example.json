@@ -1,0 +1,162 @@
+"API call structure - authentication required": "$baseURL/openmrs/ws/rest/v1/concept/$conceptExternalID",
+"API call example - authentication required": "http://lime-mosul-uat.madiro.org/openmrs/ws/rest/v1/concept/1a8bf24f-4f36-4971-aad9-ae77f3525738",
+"API response example":
+{
+    "uuid": "1a8bf24f-4f36-4971-aad9-ae77f3525738",
+    "display": "نوع الاستشارة",
+    "name": {
+        "display": "نوع الاستشارة",
+        "uuid": "ee646ef3-4e78-443b-a0e8-ea12abed0984",
+        "name": "نوع الاستشارة",
+        "locale": "ar",
+        "localePreferred": true,
+        "conceptNameType": "FULLY_SPECIFIED",
+        "links": [
+            {
+                "rel": "self",
+                "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/1a8bf24f-4f36-4971-aad9-ae77f3525738/name/ee646ef3-4e78-443b-a0e8-ea12abed0984",
+                "resourceAlias": "name"
+            },
+            {
+                "rel": "full",
+                "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/1a8bf24f-4f36-4971-aad9-ae77f3525738/name/ee646ef3-4e78-443b-a0e8-ea12abed0984?v=full",
+                "resourceAlias": "name"
+            }
+        ],
+        "resourceVersion": "1.9"
+    },
+    "datatype": {
+        "uuid": "8d4a48b6-c2cc-11de-8d13-0010c6dffd0f",
+        "display": "Coded",
+        "links": [
+            {
+                "rel": "self",
+                "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/conceptdatatype/8d4a48b6-c2cc-11de-8d13-0010c6dffd0f",
+                "resourceAlias": "conceptdatatype"
+            }
+        ]
+    },
+    "conceptClass": {
+        "uuid": "8d491e50-c2cc-11de-8d13-0010c6dffd0f",
+        "display": "Question",
+        "links": [
+            {
+                "rel": "self",
+                "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/conceptclass/8d491e50-c2cc-11de-8d13-0010c6dffd0f",
+                "resourceAlias": "conceptclass"
+            }
+        ]
+    },
+    "set": false,
+    "version": null,
+    "retired": false,
+    "names": [
+        {
+            "uuid": "ae2bfffd-f803-43a2-bcd0-675aed61fc68",
+            "display": "Type de session thérapeutique",
+            "links": [
+                {
+                    "rel": "self",
+                    "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/1a8bf24f-4f36-4971-aad9-ae77f3525738/name/ae2bfffd-f803-43a2-bcd0-675aed61fc68",
+                    "resourceAlias": "name"
+                }
+            ]
+        },
+        {
+            "uuid": "ee646ef3-4e78-443b-a0e8-ea12abed0984",
+            "display": "نوع الاستشارة",
+            "links": [
+                {
+                    "rel": "self",
+                    "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/1a8bf24f-4f36-4971-aad9-ae77f3525738/name/ee646ef3-4e78-443b-a0e8-ea12abed0984",
+                    "resourceAlias": "name"
+                }
+            ]
+        },
+        {
+            "uuid": "b16ddc7f-29d8-44e1-807a-10f109294d9c",
+            "display": "Type of therapeutic session",
+            "links": [
+                {
+                    "rel": "self",
+                    "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/1a8bf24f-4f36-4971-aad9-ae77f3525738/name/b16ddc7f-29d8-44e1-807a-10f109294d9c",
+                    "resourceAlias": "name"
+                }
+            ]
+        }
+    ],
+    "descriptions": [],
+    "mappings": [],
+    "answers": [
+        {
+            "uuid": "54e8c1b6-6397-4822-89a4-cf81fbc68ce9",
+            "display": "لم يأتي المريض",
+            "links": [
+                {
+                    "rel": "self",
+                    "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/54e8c1b6-6397-4822-89a4-cf81fbc68ce9",
+                    "resourceAlias": "concept"
+                }
+            ]
+        },
+        {
+            "uuid": "c3191c67-1737-4831-9eab-ec9a08d662f6",
+            "display": "Light contact",
+            "links": [
+                {
+                    "rel": "self",
+                    "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/c3191c67-1737-4831-9eab-ec9a08d662f6",
+                    "resourceAlias": "concept"
+                }
+            ]
+        },
+        {
+            "uuid": "16146bca-c7a6-4509-a866-afa74be44488",
+            "display": "Séance individuelle",
+            "links": [
+                {
+                    "rel": "self",
+                    "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/16146bca-c7a6-4509-a866-afa74be44488",
+                    "resourceAlias": "concept"
+                }
+            ]
+        },
+        {
+            "uuid": "7e88be67-4833-4b2c-bbd2-a14a8989fa09",
+            "display": "Family support",
+            "links": [
+                {
+                    "rel": "self",
+                    "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/7e88be67-4833-4b2c-bbd2-a14a8989fa09",
+                    "resourceAlias": "concept"
+                }
+            ]
+        },
+        {
+            "uuid": "e66af734-022a-4a31-bcaa-0cbe20d7f750",
+            "display": "Dyad session",
+            "links": [
+                {
+                    "rel": "self",
+                    "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/e66af734-022a-4a31-bcaa-0cbe20d7f750",
+                    "resourceAlias": "concept"
+                }
+            ]
+        }
+    ],
+    "setMembers": [],
+    "attributes": [],
+    "links": [
+        {
+            "rel": "self",
+            "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/1a8bf24f-4f36-4971-aad9-ae77f3525738",
+            "resourceAlias": "concept"
+        },
+        {
+            "rel": "full",
+            "uri": "http://msf-ocg-openmrs3-dev.westeurope.cloudapp.azure.com/openmrs/ws/rest/v1/concept/1a8bf24f-4f36-4971-aad9-ae77f3525738?v=full",
+            "resourceAlias": "concept"
+        }
+    ],
+    "resourceVersion": "2.0"
+}

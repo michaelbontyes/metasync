@@ -1,0 +1,70 @@
+"API call structure": "$baseURL/orgs/$org/sources/$source/concepts/$conceptID/",
+"API call example": "https://api.openconceptlab.org/orgs/MSF/sources/MSF/concepts/1314/",
+"API response example":
+{
+    "uuid": "3312411",
+    "extras": {
+      "definition": "The type of activity/ session/consultation provided."
+    },
+    "checksums": {
+      "smart": "fe7c241f4481a4016535e7fd59c94379",
+      "standard": "19dd9e2ffba5e10a8cf0a9a2e93a2fdc"
+    },
+    "id": "1314",
+    "external_id": "1a8bf24f-4f36-4971-aad9-ae77f3525738",
+    "concept_class": "Question",
+    "datatype": "Coded",
+    "url": "/orgs/MSF/sources/MSF/concepts/1314/",
+    "retired": false,
+    "source": "MSF",
+    "owner": "MSF",
+    "owner_type": "Organization",
+    "owner_url": "/orgs/MSF/",
+    "display_name": "Type of therapeutic session",
+    "display_locale": "en",
+    "names": [
+      {
+        "uuid": "19304843",
+        "name": "Type of therapeutic session",
+        "external_id": "b16ddc7f-29d8-44e1-807a-10f109294d9c",
+        "type": "ConceptName",
+        "locale": "en",
+        "locale_preferred": true,
+        "name_type": "Fully Specified",
+        "checksum": "bca84a14beb9daa79c3b16356909ce4d"
+      },
+      {
+        "uuid": "19304844",
+        "name": "Type de session thérapeutique",
+        "external_id": "ae2bfffd-f803-43a2-bcd0-675aed61fc68",
+        "type": "ConceptName",
+        "locale": "fr",
+        "locale_preferred": false,
+        "name_type": "Fully Specified",
+        "checksum": "e671c3a274ab9614258a70f629e49d7e"
+      },
+      {
+        "uuid": "19304845",
+        "name": "نوع الاستشارة",
+        "external_id": "ee646ef3-4e78-443b-a0e8-ea12abed0984",
+        "type": "ConceptName",
+        "locale": "ar",
+        "locale_preferred": false,
+        "name_type": "Fully-Specified",
+        "checksum": "78638fcd9e75ced19d4bed4738812f8f"
+      }
+    ],
+    "descriptions": [],
+    "created_on": "2023-08-08T16:30:54.369569Z",
+    "updated_on": "2024-08-30T22:28:27.411984Z",
+    "versions_url": "/orgs/MSF/sources/MSF/concepts/1314/versions/",
+    "version": "3312411",
+    "type": "Concept",
+    "update_comment": null,
+    "version_url": "/orgs/MSF/sources/MSF/concepts/1314/5756821/",
+    "updated_by": "michaelbontyes",
+    "created_by": "laure",
+    "public_can_view": true,
+    "versioned_object_id": 3312411,
+    "latest_source_version": null
+  }

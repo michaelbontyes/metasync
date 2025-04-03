@@ -1,0 +1,41 @@
+"API call structure": "$baseURL/orgs/$org/collections/$collection/concepts/?q=$ExternalUUID",
+"API call example": "https://api.openconceptlab.org/orgs/MSFOCG/collections/iraq-mosul/concepts/?q=1a8bf24f-4f36-4971-aad9-ae77f3525738",
+"API response example":
+[
+    {
+      "uuid": "3312411",
+      "references": [
+        "/orgs/MSFOCG/collections/iraq-mosul/references/9270566/"
+      ],
+      "checksums": {
+        "smart": "fe7c241f4481a4016535e7fd59c94379",
+        "standard": "19dd9e2ffba5e10a8cf0a9a2e93a2fdc"
+      },
+      "id": "1314",
+      "external_id": "1a8bf24f-4f36-4971-aad9-ae77f3525738",
+      "concept_class": "Question",
+      "datatype": "Coded",
+      "url": "/orgs/MSF/sources/MSF/concepts/1314/",
+      "retired": false,
+      "source": "MSF",
+      "owner": "MSF",
+      "owner_type": "Organization",
+      "owner_url": "/orgs/MSF/",
+      "display_name": "Type of therapeutic session",
+      "display_locale": "en",
+      "version": "3312411",
+      "update_comment": null,
+      "locale": null,
+      "version_created_by": "laure",
+      "version_created_on": "2023-08-08T16:30:54.369569Z",
+      "is_latest_version": false,
+      "versions_url": "/orgs/MSF/sources/MSF/concepts/1314/versions/",
+      "version_url": "/orgs/MSF/sources/MSF/concepts/1314/5756821/",
+      "type": "Concept",
+      "versioned_object_id": 3312411,
+      "version_updated_on": "2024-08-30T22:28:27.411984Z",
+      "version_updated_by": "michaelbontyes",
+      "latest_source_version": null,
+      "previous_version_url": null
+    }
+  ]
