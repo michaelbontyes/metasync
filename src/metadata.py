@@ -4,6 +4,7 @@ from openpyxl import load_workbook
 import os
 import tempfile
 import numpy as np
+import time
 
 DEFAULT_FILE = os.path.abspath("metadata-example.xlsx")
 ENGINE = 'openpyxl'
@@ -86,10 +87,30 @@ def main():
                             "_index": st.column_config.NumberColumn(disabled=True),
                         }
                     )
+                    # Track cell-level changes
+                    if f"previous_df_{sheet}" not in st.session_state:
+                        st.session_state[f"previous_df_{sheet}"] = df.copy()
                     
-                    # Save on change
-                    if not df.equals(edited_df):
-                        save_excel_with_sheet(edited_df, DEFAULT_FILE, sheet)
+                    # Get changed cells only
+                    changed_cells = {}
+                    for col in df.columns:
+                        for idx in df.index:
+                            if not pd.isna(df.at[idx, col]) and df.at[idx, col] != st.session_state[f"previous_df_{sheet}"].at[idx, col]:
+                                changed_cells[(idx, col)] = df.at[idx, col]
+                    
+                    # Only save if changes detected
+                    if changed_cells:
+                        st.toast(f"Saving {len(changed_cells)} changes in {sheet}...", icon="⏳")
+                        if save_excel_with_sheet(edited_df, DEFAULT_FILE, sheet):
+                            st.session_state[f"previous_df_{sheet}"] = edited_df.copy()
+                            st.toast(f"Saved changes to {sheet}!", icon="✅")
+                    
+                    # Manual save button
+                    if st.button(f"Save {sheet}", key=f"save_{sheet}"):
+                        if save_excel_with_sheet(edited_df, DEFAULT_FILE, sheet):
+                            st.session_state[f"previous_df_{sheet}"] = edited_df.copy()
+                            st.toast(f"Manually saved {sheet}!", icon="💾")
+                        
                         
         except Exception as e:
             st.error(f"Error: {str(e)}")
