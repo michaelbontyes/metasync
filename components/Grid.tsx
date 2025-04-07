@@ -21,8 +21,6 @@ import { HotTable, HotColumn } from '@handsontable/react';
 import 'handsontable/styles/handsontable.min.css';
 import 'handsontable/styles/ht-theme-main.min.css';
 
-import { Data } from '@/app/data';
-
 registerCellType(CheckboxCellType);
 registerCellType(NumericCellType);
 
@@ -35,26 +33,50 @@ registerPlugin(Filters);
 registerPlugin(HiddenRows);
 
 type GridProps = {
-  data: Data;
+  data: any[][];
+  headers?: string[];
+  colWidths?: number[];
 };
 
 export default function Grid(props: GridProps) {
+  // Generate dynamic columns based on data
+  const generateColumns = () => {
+    if (!props.data || props.data.length === 0) return null;
+
+    // Determine the number of columns from the first row of data
+    const numColumns = props.data[0].length;
+
+    return Array.from({ length: numColumns }).map((_, index) => {
+      // Determine if the column contains numeric or boolean values
+      const isNumeric = props.data.some(row =>
+        row[index] !== undefined &&
+        row[index] !== null &&
+        typeof row[index] === 'number'
+      );
+
+      const isBoolean = props.data.some(row =>
+        row[index] !== undefined &&
+        row[index] !== null &&
+        typeof row[index] === 'boolean'
+      );
+
+      return (
+        <HotColumn
+          key={index}
+          data={index}
+          type={isBoolean ? 'checkbox' : (isNumeric ? 'numeric' : undefined)}
+          className={isBoolean ? 'htCenter' : undefined}
+        />
+      );
+    });
+  };
+
   return (
     <div className="ht-theme-main">
       <HotTable
         data={props.data}
-        colWidths={[140, 126, 192, 100, 100, 90, 90, 110, 97]}
-        colHeaders={[
-          'Company name',
-          'Country',
-          'Name',
-          'Sell date',
-          'Order ID',
-          'In stock',
-          'Qty',
-          'Progress',
-          'Rating',
-        ]}
+        colWidths={props.colWidths || Array(props.data[0]?.length || 0).fill(100)}
+        colHeaders={props.headers || true}
         dropdownMenu={true}
         contextMenu={true}
         filters={true}
@@ -63,18 +85,13 @@ export default function Grid(props: GridProps) {
         navigableHeaders={true}
         autoWrapRow={true}
         autoWrapCol={true}
-        height={363}
+        height={500}
+        width="100%"
+        stretchH="all"
         imeFastEdit={true}
         licenseKey="non-commercial-and-evaluation"
       >
-        <HotColumn data={1} />
-        <HotColumn data={2} />
-        <HotColumn data={3} />
-        <HotColumn data={5} />
-        <HotColumn data={6} type="checkbox" className="htCenter" />
-        <HotColumn data={7} type="numeric" />
-        <HotColumn data={8} readOnly={true} className="htMiddle" />
-        <HotColumn data={9} readOnly={true} className="htCenter" />
+        {generateColumns()}
       </HotTable>
     </div>
   );

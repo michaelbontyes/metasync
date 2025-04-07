@@ -1,10 +1,10 @@
-import Grid from '@/components/Grid';
-import { data } from './data';
+import ExcelViewer from '@/components/ExcelViewer';
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col max-w-[1045px] p-4">
-      <Grid data={data}></Grid>
+    <main className="flex min-h-screen flex-col p-4">
+      <h1 className="text-2xl font-bold mb-4">Excel Sheet Viewer</h1>
+      <ExcelViewer />
     </main>
   );
 }
