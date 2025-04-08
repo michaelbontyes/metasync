@@ -71,7 +71,16 @@ export default function Grid(props: GridProps) {
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
   // Use provided verification data if available, otherwise use local state
+  // Ensure verification data is scoped to the current sheet
   const verificationData = props.verificationData || localVerificationData;
+
+  // Reset local verification data when sheet changes
+  useEffect(() => {
+    if (props.sheetName) {
+      log(`Sheet changed to ${props.sheetName}, resetting local verification data`);
+      setLocalVerificationData({});
+    }
+  }, [props.sheetName]);
 
   // Effect to verify data when isVerifying changes
   useEffect(() => {
@@ -113,7 +122,7 @@ export default function Grid(props: GridProps) {
 
   // Custom cell renderer function
   const cellRenderer = (_instance: any, TD: HTMLTableCellElement, row: number, col: number, prop: number | string, value: any, cellProperties: any) => {
-    // Get verification data for this cell
+    // Get verification data for this cell - ensure it's scoped to the current sheet
     const cellKey = `${row}:${col}`;
     const cellVerificationData = verificationData[cellKey];
 
@@ -195,8 +204,12 @@ export default function Grid(props: GridProps) {
           allowSampleDuplicates: false,
           useHeaders: true, // Include headers when calculating column width
         }}
-        // Don't set fixed column widths to allow auto-sizing
+        // Set column widths if provided
+        colWidths={props.colWidths}
+        // Use headers if provided
         colHeaders={props.headers || true}
+        // Set a key based on the sheet name to force re-render when sheet changes
+        key={props.sheetName || 'default'}
 
         // Enable column features
         dropdownMenu={[

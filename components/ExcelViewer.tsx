@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import Grid from './Grid';
 import SheetTabs from './SheetTabs';
+import VerificationSummary from './VerificationSummary';
 
 type SheetData = {
   [key: string]: any[][];
@@ -122,9 +123,14 @@ export default function ExcelViewer() {
     }
   };
 
-  // Function to manually trigger verification
+  // Function to manually trigger verification for the current sheet only
   const triggerVerification = () => {
-    console.log('Manual verification triggered');
+    if (!activeSheet) {
+      console.log('No active sheet to verify');
+      return;
+    }
+
+    console.log(`Manual verification triggered for sheet: ${activeSheet}`);
     setIsVerifying(true);
   };
 
@@ -168,6 +174,13 @@ export default function ExcelViewer() {
 
       {sheetNames.length > 0 && (
         <>
+          {activeSheet && sheetData[activeSheet] && (
+            <VerificationSummary
+              verificationData={sheetVerifications[activeSheet]}
+              isVerifying={isVerifying}
+            />
+          )}
+
           <SheetTabs
             sheetNames={sheetNames}
             activeSheet={activeSheet}
