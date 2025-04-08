@@ -2,8 +2,8 @@
 
 // API Base URLs
 const OCL_BASE_URL = 'https://api.openconceptlab.org';
-const OPENMRS_DEV_BASE_URL = 'https://lime-mosul-dev.madiro.org';
-const OPENMRS_UAT_BASE_URL = 'https://lime-mosul-uat.madiro.org';
+const OPENMRS_DEV_BASE_URL = 'http://lime-mosul-dev.madiro.org';
+const OPENMRS_UAT_BASE_URL = 'http://lime-mosul-uat.madiro.org';
 
 // OCL Organization and Collection settings
 const OCL_ORG = 'MSF';
@@ -64,8 +64,8 @@ export function isUUID(str: string): boolean {
 /**
  * Make a proxied API call to avoid CORS issues
  */
-async function makeProxiedApiCall(url: string): Promise<any> {
-  const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+async function makeProxiedApiCall(url: string, requiresAuth: boolean = false): Promise<any> {
+  const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}${requiresAuth ? '&auth=true' : ''}`;
   log(`Making proxied API call via: ${proxyUrl}`);
 
   const response = await fetch(proxyUrl);
@@ -84,7 +84,7 @@ export async function verifyUUIDInOCLSource(uuid: string): Promise<any> {
     log(`Verifying UUID ${uuid} in OCL Source`);
 
     // Make actual API call to OCL Source via proxy
-    const targetUrl = `${OCL_BASE_URL}/orgs/${OCL_ORG}/sources/${OCL_SOURCE}/concepts/${uuid}/`;
+    const targetUrl = `${OCL_BASE_URL}/orgs/${OCL_ORG}/sources/${OCL_SOURCE}/concepts/?q=${uuid}`;
     log(`Target API URL: ${targetUrl}`);
 
     try {
@@ -149,12 +149,12 @@ export async function verifyUUIDInOpenMRSDev(uuid: string): Promise<any> {
   try {
     log(`Verifying UUID ${uuid} in OpenMRS DEV`);
 
-    // Make actual API call to OpenMRS DEV via proxy
+    // Make actual API call to OpenMRS DEV via proxy with authentication
     const targetUrl = `${OPENMRS_DEV_BASE_URL}/openmrs/ws/rest/v1/concept/${uuid}`;
-    log(`Target API URL: ${targetUrl}`);
+    log(`Target API URL: ${targetUrl} (with authentication)`);
 
     try {
-      const data = await makeProxiedApiCall(targetUrl);
+      const data = await makeProxiedApiCall(targetUrl, true); // true = requires authentication
       log(`UUID ${uuid} found in OpenMRS DEV with data:`, data);
 
       return {
@@ -179,12 +179,12 @@ export async function verifyUUIDInOpenMRSUat(uuid: string): Promise<any> {
   try {
     log(`Verifying UUID ${uuid} in OpenMRS UAT`);
 
-    // Make actual API call to OpenMRS UAT via proxy
+    // Make actual API call to OpenMRS UAT via proxy with authentication
     const targetUrl = `${OPENMRS_UAT_BASE_URL}/openmrs/ws/rest/v1/concept/${uuid}`;
-    log(`Target API URL: ${targetUrl}`);
+    log(`Target API URL: ${targetUrl} (with authentication)`);
 
     try {
-      const data = await makeProxiedApiCall(targetUrl);
+      const data = await makeProxiedApiCall(targetUrl, true); // true = requires authentication
       log(`UUID ${uuid} found in OpenMRS UAT with data:`, data);
 
       return {
