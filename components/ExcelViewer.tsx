@@ -16,6 +16,7 @@ export default function ExcelViewer() {
   const [activeSheet, setActiveSheet] = useState<string>('');
   const [headers, setHeaders] = useState<string[]>([]);
   const [colWidths, setColWidths] = useState<number[]>([]);
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load the example file automatically on component mount
@@ -49,6 +50,7 @@ export default function ExcelViewer() {
   };
 
   const parseExcel = (data: ArrayBuffer) => {
+    setIsVerifying(true);
     const workbook = XLSX.read(data, { type: 'array' });
     const sheets: SheetData = {};
     const names: string[] = workbook.SheetNames;
@@ -61,18 +63,18 @@ export default function ExcelViewer() {
 
     setSheetData(sheets);
     setSheetNames(names);
-    
+
     if (names.length > 0) {
       setActiveSheet(names[0]);
-      
+
       // Set headers from the first row of the first sheet
       const firstSheetData = sheets[names[0]];
       if (firstSheetData && firstSheetData.length > 0) {
         const headerRow = firstSheetData[0];
         setHeaders(headerRow.map(String));
-        
+
         // Generate column widths based on header length
-        setColWidths(headerRow.map(header => 
+        setColWidths(headerRow.map(header =>
           Math.max(100, String(header).length * 10)
         ));
       }
@@ -80,16 +82,17 @@ export default function ExcelViewer() {
   };
 
   const handleSheetChange = (sheetName: string) => {
+    setIsVerifying(true);
     setActiveSheet(sheetName);
-    
+
     // Update headers when changing sheets
     const currentSheetData = sheetData[sheetName];
     if (currentSheetData && currentSheetData.length > 0) {
       const headerRow = currentSheetData[0];
       setHeaders(headerRow.map(String));
-      
+
       // Generate column widths based on header length
-      setColWidths(headerRow.map(header => 
+      setColWidths(headerRow.map(header =>
         Math.max(100, String(header).length * 10)
       ));
     }
@@ -104,7 +107,7 @@ export default function ExcelViewer() {
   return (
     <div className="flex flex-col w-full">
       <div className="mb-4 flex items-center">
-        <button 
+        <button
           onClick={handleFileUploadClick}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
         >
@@ -123,18 +126,26 @@ export default function ExcelViewer() {
 
       {sheetNames.length > 0 && (
         <>
-          <SheetTabs 
-            sheetNames={sheetNames} 
-            activeSheet={activeSheet} 
-            onSheetChange={handleSheetChange} 
+          <SheetTabs
+            sheetNames={sheetNames}
+            activeSheet={activeSheet}
+            onSheetChange={handleSheetChange}
           />
-          
+
           {activeSheet && sheetData[activeSheet] && (
-            <Grid 
-              data={sheetData[activeSheet].slice(1)} // Skip header row
-              headers={headers}
-              colWidths={colWidths}
-            />
+            <>
+              {isVerifying && (
+                <div className="mb-2 text-blue-600">
+                  <span className="inline-block mr-2 animate-spin">⟳</span>
+                  Verifying UUIDs and datatypes...
+                </div>
+              )}
+              <Grid
+                data={sheetData[activeSheet].slice(1)} // Skip header row
+                headers={headers}
+                colWidths={colWidths}
+              />
+            </>
           )}
         </>
       )}

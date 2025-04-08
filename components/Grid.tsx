@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   AutoColumnSize,
   Autofill,
@@ -25,6 +26,10 @@ import { HotTable, HotColumn } from '@handsontable/react';
 import 'handsontable/styles/handsontable.min.css';
 import 'handsontable/styles/ht-theme-main.min.css';
 
+// Import verification services
+import { verifySheetData, SheetVerificationData } from '@/services/verificationService';
+import { VerifiedCell } from './VerifiedCell';
+
 registerCellType(CheckboxCellType);
 registerCellType(NumericCellType);
 
@@ -47,6 +52,59 @@ type GridProps = {
 };
 
 export default function Grid(props: GridProps) {
+  // State for verification data
+  const [verificationData, setVerificationData] = useState<SheetVerificationData>({});
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+
+  // Effect to verify data when it changes
+  useEffect(() => {
+    if (props.data && props.data.length > 0 && props.headers) {
+      verifyData();
+    }
+  }, [props.data, props.headers]);
+
+  // Function to verify data
+  const verifyData = async () => {
+    if (isVerifying || !props.data || !props.headers) return;
+
+    setIsVerifying(true);
+    try {
+      const results = await verifySheetData(props.data, props.headers);
+      setVerificationData(results);
+    } catch (error) {
+      console.error('Error verifying data:', error);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Custom cell renderer function
+  const cellRenderer = (_instance: any, TD: HTMLTableCellElement, row: number, col: number, prop: number | string, value: any, cellProperties: any) => {
+    // Get verification data for this cell
+    const cellKey = `${row}:${col}`;
+    const cellVerificationData = verificationData[cellKey];
+
+    // Store verification content in the cell's dataset for tooltip access
+    if (cellVerificationData?.tooltipContent) {
+      TD.dataset.verificationContent = cellVerificationData.tooltipContent;
+    } else {
+      delete TD.dataset.verificationContent;
+    }
+
+    // Render the cell with verification data
+    VerifiedCell({
+      value: value !== null && value !== undefined ? String(value) : '',
+      verificationData: cellVerificationData,
+      row,
+      col,
+      prop,
+      TD,
+      cellProperties
+    });
+
+    return TD;
+  };
+
   // Generate dynamic columns based on data
   const generateColumns = () => {
     if (!props.data || props.data.length === 0) return null;
@@ -74,6 +132,7 @@ export default function Grid(props: GridProps) {
           data={index}
           type={isBoolean ? 'checkbox' : (isNumeric ? 'numeric' : undefined)}
           className={isBoolean ? 'htCenter' : undefined}
+          renderer={cellRenderer}
         />
       );
     });
