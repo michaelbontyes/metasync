@@ -22,6 +22,7 @@ export default function ExcelViewer() {
   const [headers, setHeaders] = useState<string[]>([]);
   const [colWidths, setColWidths] = useState<number[]>([]);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [verificationProgress, setVerificationProgress] = useState<number>(0);
   const [sheetVerifications, setSheetVerifications] = useState<SheetVerificationMap>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -132,6 +133,7 @@ export default function ExcelViewer() {
 
     console.log(`Manual verification triggered for sheet: ${activeSheet}`);
     setIsVerifying(true);
+    setVerificationProgress(0);
   };
 
   // Function to manually trigger verification for all sheets
@@ -198,6 +200,12 @@ export default function ExcelViewer() {
       [sheetName]: verificationData
     }));
     setIsVerifying(false);
+    setVerificationProgress(100);
+  };
+
+  // Handle verification progress updates
+  const handleVerificationProgress = (progress: number) => {
+    setVerificationProgress(progress);
   };
 
   return (
@@ -256,9 +264,18 @@ export default function ExcelViewer() {
           {activeSheet && sheetData[activeSheet] && (
             <>
               {isVerifying && (
-                <div className="mb-2 text-blue-600">
-                  <span className="inline-block mr-2 animate-spin">⟳</span>
-                  Verifying UUIDs and datatypes...
+                <div className="mb-2">
+                  <div className="flex items-center mb-1">
+                    <span className="inline-block mr-2 text-blue-600 animate-spin">⟳</span>
+                    <span className="text-blue-600">Verifying UUIDs and datatypes...</span>
+                    <span className="ml-2 text-sm text-gray-500">{verificationProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
+                      style={{ width: `${verificationProgress}%` }}
+                    ></div>
+                  </div>
                 </div>
               )}
               <Grid
@@ -269,6 +286,7 @@ export default function ExcelViewer() {
                 verificationData={sheetVerifications[activeSheet]}
                 sheetName={activeSheet}
                 onVerificationComplete={handleVerificationComplete}
+                onVerificationProgress={handleVerificationProgress}
               />
             </>
           )}

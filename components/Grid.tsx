@@ -63,6 +63,7 @@ type GridProps = {
   verificationData?: SheetVerificationData;
   sheetName?: string;
   onVerificationComplete?: (sheetName: string, verificationData: SheetVerificationData) => void;
+  onVerificationProgress?: (progress: number) => void;
 };
 
 export default function Grid(props: GridProps) {
@@ -103,9 +104,31 @@ export default function Grid(props: GridProps) {
 
     try {
       log('Calling verifySheetData...');
-      verificationResults = await verifySheetData(props.data, props.headers);
+
+      // Report initial progress
+      if (props.onVerificationProgress) {
+        props.onVerificationProgress(10);
+      }
+
+      // Start verification
+      const totalRows = props.data.length;
+      const updateInterval = Math.max(1, Math.floor(totalRows / 10)); // Update progress every 10% of rows
+
+      // Use a modified version of verifySheetData that reports progress
+      verificationResults = await verifySheetData(props.data, props.headers, (rowIndex) => {
+        if (props.onVerificationProgress && rowIndex % updateInterval === 0) {
+          const progress = Math.min(90, 10 + Math.round((rowIndex / totalRows) * 80));
+          props.onVerificationProgress(progress);
+        }
+      });
+
       log(`Verification complete, received data for ${Object.keys(verificationResults).length} cells`);
       setLocalVerificationData(verificationResults);
+
+      // Report completion progress
+      if (props.onVerificationProgress) {
+        props.onVerificationProgress(100);
+      }
     } catch (error) {
       console.error('Error verifying data:', error);
       log('Verification failed with error:', error);

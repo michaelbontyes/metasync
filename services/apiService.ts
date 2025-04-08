@@ -52,6 +52,8 @@ export interface VerificationResult {
   };
   expectedDatatype?: string;
   datatypeMatch: boolean;
+  notFoundIndicator?: boolean;
+  isDatatype?: boolean; // Flag to identify datatype verifications
 }
 
 /**

@@ -14,6 +14,9 @@ function log(...args: any[]) {
 const UUID_COLUMN_NAMES = ['EMR_Concept_UUID', 'uuid', 'conceptUuid'];
 const DATATYPE_COLUMN_NAMES = ['Datatype', 'datatype'];
 
+// Special values that indicate a UUID is not found or not applicable
+const NOT_FOUND_INDICATORS = ['N/A', 'NA', 'TBD', 'PENDING', 'NOT FOUND', 'NOTFOUND', 'NOT_FOUND'];
+
 // Interface for cell verification data
 export interface CellVerificationData {
   rowIndex: number;
@@ -21,8 +24,10 @@ export interface CellVerificationData {
   value: string;
   isVerified: boolean;
   isValid: boolean;
+  hasDiscrepancy?: boolean; // Flag to indicate a discrepancy (found in some systems but not all)
   verificationDetails?: VerificationResult;
   tooltipContent?: string;
+  isNotFoundIndicator?: boolean;
 }
 
 // Interface for sheet verification data
@@ -64,7 +69,8 @@ export function identifySpecialColumns(headers: string[]): {
  */
 export async function verifySheetData(
   data: any[][],
-  headers: string[]
+  headers: string[],
+  progressCallback?: (rowIndex: number) => void
 ): Promise<SheetVerificationData> {
   log(`Starting verification of sheet data with ${data.length} rows`);
   const verificationData: SheetVerificationData = {};
@@ -83,11 +89,15 @@ export async function verifySheetData(
     log(`Found datatype column at index ${datatypeColumnIndex}`);
   }
 
-  // Process each row - limit to first 10 rows for performance in demo
-  const rowsToProcess = Math.min(data.length, 10);
+  // Process each row
+  const rowsToProcess = data.length;
   log(`Processing ${rowsToProcess} rows for verification`);
 
   for (let rowIndex = 0; rowIndex < rowsToProcess; rowIndex++) {
+    // Report progress if callback is provided
+    if (progressCallback) {
+      progressCallback(rowIndex);
+    }
     const row = data[rowIndex];
     log(`Processing row ${rowIndex}:`, row);
 
@@ -99,14 +109,6 @@ export async function verifySheetData(
 
     const uuidValue = String(row[uuidColumnIndex]);
     log(`Row ${rowIndex}: Found UUID candidate: ${uuidValue}`);
-
-    // Skip if not a UUID
-    if (!isUUID(uuidValue)) {
-      log(`Row ${rowIndex}: Value ${uuidValue} is not a valid UUID format, skipping`);
-      continue;
-    }
-
-    log(`Row ${rowIndex}: Verifying UUID ${uuidValue}`);
 
     // Get datatype if available
     let datatype: string | undefined;
@@ -120,6 +122,59 @@ export async function verifySheetData(
         log(`Row ${rowIndex}: No datatype found`);
       }
     }
+
+    // Check if this is a not-found indicator
+    const isNotFoundIndicator = NOT_FOUND_INDICATORS.some(
+      indicator => uuidValue.toUpperCase().trim() === indicator
+    );
+
+    // Handle not-found indicators
+    if (isNotFoundIndicator) {
+      log(`Row ${rowIndex}: Found not-found indicator: ${uuidValue}`);
+
+      // Create a special verification result for not-found indicators
+      const notFoundResult: VerificationResult = {
+        uuid: uuidValue,
+        isValid: false,
+        datatypeMatch: false,
+        expectedDatatype: datatype,
+        sources: {
+          // Use empty objects instead of null
+          oclSource: { exists: false },
+          oclCollection: { exists: false },
+          openmrsDev: { exists: false },
+          openmrsUat: { exists: false }
+        },
+        notFoundIndicator: true
+      };
+
+      // Create tooltip content
+      const tooltipContent = `UUID: ${uuidValue}\nStatus: Not Found Indicator\n\nThis cell contains a value that indicates the UUID is not found or not yet assigned.`;
+
+      // Store verification data
+      const cellKey = `${rowIndex}:${uuidColumnIndex}`;
+      verificationData[cellKey] = {
+        rowIndex,
+        colIndex: uuidColumnIndex,
+        value: uuidValue,
+        isVerified: true,
+        isValid: false, // Not-found indicators are considered invalid
+        verificationDetails: notFoundResult,
+        tooltipContent,
+        isNotFoundIndicator: true
+      };
+
+      log(`Row ${rowIndex}: Added verification data for not-found indicator at ${cellKey}`);
+      continue;
+    }
+
+    // Skip if not a UUID
+    if (!isUUID(uuidValue)) {
+      log(`Row ${rowIndex}: Value ${uuidValue} is not a valid UUID format, skipping`);
+      continue;
+    }
+
+    log(`Row ${rowIndex}: Verifying UUID ${uuidValue}`);
 
     // Verify the UUID
     log(`Row ${rowIndex}: Starting verification for UUID ${uuidValue}${datatype ? ` with datatype ${datatype}` : ''}`);
@@ -135,27 +190,49 @@ export async function verifySheetData(
 
     // Store verification data
     const cellKey = `${rowIndex}:${uuidColumnIndex}`;
+
+    // Check if the UUID is found in all required systems
+    // We'll consider a UUID valid only if it's found in all systems
+    const foundInAllSystems = !!(  // Double negation to ensure boolean type
+      verificationResult.sources.oclSource?.exists &&
+      verificationResult.sources.oclCollection?.exists &&
+      verificationResult.sources.openmrsDev?.exists &&
+      verificationResult.sources.openmrsUat?.exists
+    );
+
+    // If the UUID is found in any system but not all, it's a discrepancy
+    const hasDiscrepancy = verificationResult.isValid && !foundInAllSystems;
+
     verificationData[cellKey] = {
       rowIndex,
       colIndex: uuidColumnIndex,
       value: uuidValue,
       isVerified: true,
-      isValid: verificationResult.isValid,
+      isValid: foundInAllSystems, // Only valid if found in all systems
+      hasDiscrepancy, // Flag to indicate a discrepancy
       verificationDetails: verificationResult,
       tooltipContent
     };
-    log(`Row ${rowIndex}: Added verification data for UUID cell at ${cellKey}`);
+    log(`Row ${rowIndex}: Added verification data for UUID cell at ${cellKey} (found in all systems: ${foundInAllSystems}, has discrepancy: ${hasDiscrepancy})`);
+
 
     // If datatype column exists, also verify it
     if (datatypeColumnIndex !== null && datatype) {
       const datatypeCellKey = `${rowIndex}:${datatypeColumnIndex}`;
+
+      // Create a modified verification result specifically for the datatype
+      const datatypeVerificationResult = {
+        ...verificationResult,
+        isDatatype: true // Flag to identify this as a datatype verification
+      };
+
       verificationData[datatypeCellKey] = {
         rowIndex,
         colIndex: datatypeColumnIndex,
         value: datatype,
         isVerified: true,
         isValid: verificationResult.datatypeMatch,
-        verificationDetails: verificationResult,
+        verificationDetails: datatypeVerificationResult,
         tooltipContent
       };
       log(`Row ${rowIndex}: Added verification data for datatype cell at ${datatypeCellKey}`);
@@ -233,8 +310,19 @@ export function getCellBackgroundColor(cellData?: CellVerificationData): string 
   // Mark as invalid (red) if:
   // 1. The verification explicitly failed (isValid is false)
   // 2. The UUID was not found in any API (verificationDetails.isValid is false)
+  // 3. The cell contains a not-found indicator
+  // 4. The UUID has a discrepancy (found in some systems but not all)
   const isInvalid = !cellData.isValid ||
-    (cellData.verificationDetails && !cellData.verificationDetails.isValid);
+    (cellData.verificationDetails && !cellData.verificationDetails.isValid) ||
+    cellData.isNotFoundIndicator ||
+    cellData.hasDiscrepancy;
+
+  // Use a different shade for different types of issues
+  if (cellData.isNotFoundIndicator) {
+    return 'rgba(255, 165, 0, 0.2)'; // Orange for not-found indicators
+  } else if (cellData.hasDiscrepancy) {
+    return 'rgba(255, 0, 0, 0.2)'; // Red for discrepancies
+  }
 
   return isInvalid ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 255, 0, 0.2)';
 }
