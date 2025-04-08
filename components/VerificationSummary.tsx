@@ -33,13 +33,31 @@ type SummaryStats = {
   oclCollection: EnvironmentStats;
   openmrsDev: EnvironmentStats;
   openmrsUat: EnvironmentStats;
+
+  // Computed totals
+  total: number;
+  foundInAny: number;
+};
+
+type SheetStats = {
+  uuidTotal: number;
+  uuidFoundInAll: number;
+  uuidFoundInAny: number;
+  uuidNotFoundInAny: number;
+  uuidNotFoundIndicators: number;
+  uuidDiscrepancies: number;
+  datatypeTotal: number;
+  datatypeMatched: number;
+  datatypeMismatched: number;
+  percentage: number;
 };
 
 export default function VerificationSummary({ verificationData, isVerifying, allSheetsData, currentSheet }: VerificationSummaryProps) {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   // Calculate summary statistics
-  const calculateStats = (): SummaryStats => {
-    if (!verificationData || Object.keys(verificationData).length === 0) {
+  const calculateStats = (data?: any): SummaryStats => {
+    const verificationDataToUse = data || verificationData;
+    if (!verificationDataToUse || Object.keys(verificationDataToUse).length === 0) {
       return {
         // UUID statistics
         uuidTotal: 0,
@@ -53,6 +71,10 @@ export default function VerificationSummary({ verificationData, isVerifying, all
         datatypeTotal: 0,
         datatypeMatched: 0,
         datatypeMismatched: 0,
+
+        // Computed totals
+        total: 0,
+        foundInAny: 0,
 
         // Environment statistics
         oclSource: { total: 0, found: 0, notFound: 0, percentage: 0 },
@@ -76,6 +98,10 @@ export default function VerificationSummary({ verificationData, isVerifying, all
       datatypeMatched: 0,
       datatypeMismatched: 0,
 
+      // Computed totals
+      total: 0,
+      foundInAny: 0,
+
       // Environment statistics
       oclSource: { total: 0, found: 0, notFound: 0, percentage: 0 },
       oclCollection: { total: 0, found: 0, notFound: 0, percentage: 0 },
@@ -84,7 +110,7 @@ export default function VerificationSummary({ verificationData, isVerifying, all
     };
 
     // Separate UUID cells and datatype cells
-    const allCells = Object.values(verificationData);
+    const allCells = Object.values(verificationDataToUse);
     const uuidCells = allCells.filter(
       (cell: any) => cell.verificationDetails && cell.verificationDetails.uuid && !cell.verificationDetails.isDatatype
     );
@@ -184,6 +210,9 @@ export default function VerificationSummary({ verificationData, isVerifying, all
       stats.openmrsUat.percentage = Math.round((stats.openmrsUat.found / stats.openmrsUat.total) * 100);
     }
 
+    // Calculate computed totals
+    stats.total = stats.uuidTotal + stats.datatypeTotal;
+    stats.foundInAny = stats.uuidFoundInAny;
     return stats;
   };
 
@@ -207,8 +236,12 @@ export default function VerificationSummary({ verificationData, isVerifying, all
       datatypeMatched: 0,
       datatypeMismatched: 0,
 
+      // Computed totals
+      total: 0,
+      foundInAny: 0,
+
       // Sheet statistics
-      sheetStats: {}
+      sheetStats: {} as Record<string, SheetStats>
     };
 
     Object.entries(allSheetsData).forEach(([sheetName, sheetData]) => {
@@ -242,6 +275,9 @@ export default function VerificationSummary({ verificationData, isVerifying, all
       };
     });
 
+    // Calculate computed totals
+    allStats.total = allStats.uuidTotal + allStats.datatypeTotal;
+    allStats.foundInAny = allStats.uuidFoundInAny;
     return allStats;
   };
 

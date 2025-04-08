@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// This route uses dynamic features and cannot be statically generated
+export const dynamic = 'force-dynamic';
+
 /**
  * API proxy to handle CORS issues when making requests to external APIs
  */
