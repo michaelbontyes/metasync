@@ -1,5 +1,15 @@
 import { verifyUUID, mapExcelDatatypeToOpenMRS, isUUID, VerificationResult } from './apiService';
 
+// Enable detailed logging
+const ENABLE_LOGGING = true;
+
+// Logger function
+function log(...args: any[]) {
+  if (ENABLE_LOGGING) {
+    console.log('[Verification Service]', ...args);
+  }
+}
+
 // Column names that might contain UUIDs
 const UUID_COLUMN_NAMES = ['EMR_Concept_UUID', 'uuid', 'conceptUuid'];
 const DATATYPE_COLUMN_NAMES = ['Datatype', 'datatype'];
@@ -27,6 +37,7 @@ export function identifySpecialColumns(headers: string[]): {
   uuidColumnIndex: number | null,
   datatypeColumnIndex: number | null
 } {
+  log('Identifying special columns in headers:', headers);
   let uuidColumnIndex: number | null = null;
   let datatypeColumnIndex: number | null = null;
 
@@ -34,14 +45,17 @@ export function identifySpecialColumns(headers: string[]): {
     // Check for UUID column
     if (UUID_COLUMN_NAMES.some(name => header.includes(name))) {
       uuidColumnIndex = index;
+      log(`Found UUID column: "${header}" at index ${index}`);
     }
 
     // Check for datatype column
     if (DATATYPE_COLUMN_NAMES.some(name => header.includes(name))) {
       datatypeColumnIndex = index;
+      log(`Found datatype column: "${header}" at index ${index}`);
     }
   });
 
+  log('Column identification result:', { uuidColumnIndex, datatypeColumnIndex });
   return { uuidColumnIndex, datatypeColumnIndex };
 }
 
@@ -52,6 +66,7 @@ export async function verifySheetData(
   data: any[][],
   headers: string[]
 ): Promise<SheetVerificationData> {
+  log(`Starting verification of sheet data with ${data.length} rows`);
   const verificationData: SheetVerificationData = {};
 
   // Identify UUID and datatype columns
@@ -59,47 +74,61 @@ export async function verifySheetData(
 
   // If no UUID column found, return empty verification data
   if (uuidColumnIndex === null) {
+    log('No UUID column found, skipping verification');
     return verificationData;
   }
 
-  console.log(`Found UUID column at index ${uuidColumnIndex}`);
+  log(`Found UUID column at index ${uuidColumnIndex}`);
   if (datatypeColumnIndex !== null) {
-    console.log(`Found datatype column at index ${datatypeColumnIndex}`);
+    log(`Found datatype column at index ${datatypeColumnIndex}`);
   }
 
   // Process each row - limit to first 10 rows for performance in demo
   const rowsToProcess = Math.min(data.length, 10);
+  log(`Processing ${rowsToProcess} rows for verification`);
+
   for (let rowIndex = 0; rowIndex < rowsToProcess; rowIndex++) {
     const row = data[rowIndex];
+    log(`Processing row ${rowIndex}:`, row);
 
     // Skip rows that don't have enough columns
     if (row.length <= uuidColumnIndex) {
+      log(`Row ${rowIndex}: Not enough columns, skipping`);
       continue;
     }
 
     const uuidValue = String(row[uuidColumnIndex]);
+    log(`Row ${rowIndex}: Found UUID candidate: ${uuidValue}`);
 
     // Skip if not a UUID
     if (!isUUID(uuidValue)) {
-      console.log(`Row ${rowIndex}: Value ${uuidValue} is not a valid UUID`);
+      log(`Row ${rowIndex}: Value ${uuidValue} is not a valid UUID format, skipping`);
       continue;
     }
 
-    console.log(`Row ${rowIndex}: Verifying UUID ${uuidValue}`);
+    log(`Row ${rowIndex}: Verifying UUID ${uuidValue}`);
 
     // Get datatype if available
     let datatype: string | undefined;
     if (datatypeColumnIndex !== null && row.length > datatypeColumnIndex) {
       datatype = String(row[datatypeColumnIndex]);
       if (datatype) {
+        const originalDatatype = datatype;
         datatype = mapExcelDatatypeToOpenMRS(datatype);
-        console.log(`Row ${rowIndex}: Found datatype ${datatype}`);
+        log(`Row ${rowIndex}: Found datatype ${originalDatatype}, mapped to ${datatype}`);
+      } else {
+        log(`Row ${rowIndex}: No datatype found`);
       }
     }
 
     // Verify the UUID
+    log(`Row ${rowIndex}: Starting verification for UUID ${uuidValue}${datatype ? ` with datatype ${datatype}` : ''}`);
     const verificationResult = await verifyUUID(uuidValue, datatype);
-    console.log(`Row ${rowIndex}: Verification result:`, verificationResult.isValid ? 'Valid' : 'Invalid');
+    log(`Row ${rowIndex}: Verification complete:`, {
+      isValid: verificationResult.isValid,
+      datatypeMatch: verificationResult.datatypeMatch,
+      sources: Object.keys(verificationResult.sources).filter(key => verificationResult.sources[key as keyof typeof verificationResult.sources])
+    });
 
     // Create tooltip content
     const tooltipContent = createTooltipContent(verificationResult);
@@ -115,6 +144,7 @@ export async function verifySheetData(
       verificationDetails: verificationResult,
       tooltipContent
     };
+    log(`Row ${rowIndex}: Added verification data for UUID cell at ${cellKey}`);
 
     // If datatype column exists, also verify it
     if (datatypeColumnIndex !== null && datatype) {
@@ -128,9 +158,11 @@ export async function verifySheetData(
         verificationDetails: verificationResult,
         tooltipContent
       };
+      log(`Row ${rowIndex}: Added verification data for datatype cell at ${datatypeCellKey}`);
     }
   }
 
+  log(`Verification complete, processed ${Object.keys(verificationData).length} cells`);
   return verificationData;
 }
 
@@ -138,6 +170,8 @@ export async function verifySheetData(
  * Create tooltip content from verification result
  */
 function createTooltipContent(result: VerificationResult): string {
+  log(`Creating tooltip content for UUID: ${result.uuid}`);
+
   let content = `UUID: ${result.uuid}\n`;
   content += `Valid: ${result.isValid ? 'Yes' : 'No'}\n`;
 
@@ -184,6 +218,7 @@ function createTooltipContent(result: VerificationResult): string {
     content += `- OpenMRS UAT: Not Found\n`;
   }
 
+  log(`Tooltip content created with ${content.split('\n').length} lines`);
   return content;
 }
 
@@ -195,5 +230,11 @@ export function getCellBackgroundColor(cellData?: CellVerificationData): string 
     return 'transparent';
   }
 
-  return cellData.isValid ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)';
+  // Mark as invalid (red) if:
+  // 1. The verification explicitly failed (isValid is false)
+  // 2. The UUID was not found in any API (verificationDetails.isValid is false)
+  const isInvalid = !cellData.isValid ||
+    (cellData.verificationDetails && !cellData.verificationDetails.isValid);
+
+  return isInvalid ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 255, 0, 0.2)';
 }

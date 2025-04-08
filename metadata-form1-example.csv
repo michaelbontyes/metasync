@@ -1,6 +1,0 @@
-﻿EMR_Page_Name_EN,EMR_Page_Name_AR,EMR_Section_Name_EN,EMR_Section_Name_AR,EMR_Concept_UUID,EMR_Custom_Label_EN,EMR_Custom_Label_AR,Datatype,OptionSet,EMR_Tooltip_EN,EMR_Tooltip_AR,EMR_Rendering_Type,EMR_OptionSet_Name,EMR_Default_Value,EMR_Calculation,EMR_Skip_Logic
-Consultation,,File information,معلومات الملف,1a8bf24f-4f36-4971-aad9-ae77f3525738,Type of consultation,نوع الاستشارة,Coded,Type of consultation - MHPSS baseline,,,radio,,,,
-Consultation,,File information,معلومات الملف,b87a93ff-a4a1-4601-b35d-1e42bfa7e194,Total number of beneficiaries in family consultation,إجمالي عدد المستفيدين من الاستشارة الأسرية,Numeric,,,,number,,,,
-Consultation,,Referral source,مصدر الإحالة,790b41ce-e1e7-11e8-b02f-0242ac130002,"""If other","specify""",Text,,,,text,,,,
-History,,Motive of consultation,الدافع للأستشارة,f2af87a3-2a14-4f67-9d51-df1de7a468ca,Why is the patient coming to you,لماذا يأتي المريض لك,Text,,,,textarea,,,,
-History,,History of Mental Disorder,تاريخ الاضرابات النفسية,d300cf49-11f1-4a13-bd36-70a4282e923c,Does the patient have a previous mental disorder diagnosis?,هل لدى المريض تشخيص سابق باضطراب نفسي؟,Coded,Yes-no,,,radio,,,,

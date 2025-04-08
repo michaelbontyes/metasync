@@ -30,6 +30,16 @@ import 'handsontable/styles/ht-theme-main.min.css';
 import { verifySheetData, SheetVerificationData } from '@/services/verificationService';
 import { VerifiedCell } from './VerifiedCell';
 
+// Enable detailed logging
+const ENABLE_LOGGING = true;
+
+// Logger function
+function log(...args: any[]) {
+  if (ENABLE_LOGGING) {
+    console.log('[Grid Component]', ...args);
+  }
+}
+
 registerCellType(CheckboxCellType);
 registerCellType(NumericCellType);
 
@@ -49,32 +59,55 @@ type GridProps = {
   data: any[][];
   headers?: string[];
   colWidths?: number[];
+  isVerifying?: boolean;
+  verificationData?: SheetVerificationData;
+  sheetName?: string;
+  onVerificationComplete?: (sheetName: string, verificationData: SheetVerificationData) => void;
 };
 
 export default function Grid(props: GridProps) {
   // State for verification data
-  const [verificationData, setVerificationData] = useState<SheetVerificationData>({});
+  const [localVerificationData, setLocalVerificationData] = useState<SheetVerificationData>({});
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
-  // Effect to verify data when it changes
+  // Use provided verification data if available, otherwise use local state
+  const verificationData = props.verificationData || localVerificationData;
+
+  // Effect to verify data when isVerifying changes
   useEffect(() => {
-    if (props.data && props.data.length > 0 && props.headers) {
+    if (props.isVerifying && props.data && props.data.length > 0 && props.headers) {
+      log('Verification triggered from parent component');
       verifyData();
     }
-  }, [props.data, props.headers]);
+  }, [props.isVerifying, props.data, props.headers]);
 
   // Function to verify data
   const verifyData = async () => {
-    if (isVerifying || !props.data || !props.headers) return;
+    if (isVerifying || !props.data || !props.headers) {
+      log('Skipping verification: already in progress or missing data/headers');
+      return;
+    }
 
+    log(`Starting verification for ${props.data.length} rows of data`);
     setIsVerifying(true);
+    let verificationResults: SheetVerificationData = {};
+
     try {
-      const results = await verifySheetData(props.data, props.headers);
-      setVerificationData(results);
+      log('Calling verifySheetData...');
+      verificationResults = await verifySheetData(props.data, props.headers);
+      log(`Verification complete, received data for ${Object.keys(verificationResults).length} cells`);
+      setLocalVerificationData(verificationResults);
     } catch (error) {
       console.error('Error verifying data:', error);
+      log('Verification failed with error:', error);
     } finally {
       setIsVerifying(false);
+      log('Verification process completed');
+
+      // Notify parent component that verification is complete
+      if (props.onVerificationComplete && props.sheetName) {
+        props.onVerificationComplete(props.sheetName, verificationResults);
+      }
     }
   };
 
@@ -84,12 +117,18 @@ export default function Grid(props: GridProps) {
     const cellKey = `${row}:${col}`;
     const cellVerificationData = verificationData[cellKey];
 
+    // Log cell rendering with verification status
+    if (cellVerificationData) {
+      log(`Rendering cell at ${row}:${col} with verification status: ${cellVerificationData.isValid ? 'valid' : 'invalid'}`);
+    }
+
     // Always ensure text is black for readability
     TD.style.color = '#000';
 
     // Store verification content in the cell's dataset for tooltip access
     if (cellVerificationData?.tooltipContent) {
       TD.dataset.verificationContent = cellVerificationData.tooltipContent;
+      log(`Added tooltip content to cell ${row}:${col}`);
     } else {
       delete TD.dataset.verificationContent;
     }
@@ -106,7 +145,9 @@ export default function Grid(props: GridProps) {
     });
 
     // Create a text node with the value and append it to the cell
-    TD.textContent = value !== null && value !== undefined ? String(value) : '';
+    const displayValue = value !== null && value !== undefined ? String(value) : '';
+    TD.textContent = displayValue;
+    log(`Set cell ${row}:${col} text content to: ${displayValue.substring(0, 20)}${displayValue.length > 20 ? '...' : ''}`);
 
     return TD;
   };

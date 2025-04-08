@@ -1,3 +1,0 @@
-EMR_Page_Name_EN,EMR_Page_Name_AR,EMR_Section_Name_EN,EMR_Section_Name_AR,EMR_Concept_UUID,EMR_Custom_Label_EN,EMR_Custom_Label_AR,Datatype,OptionSet,EMR_Tooltip_EN,EMR_Tooltip_AR,EMR_Rendering_Type,EMR_OptionSet_Name,EMR_Default_Value,EMR_Calculation,EMR_Skip_Logic
-Consultation,,File information,معلومات الملف,1a8bf24f-4f36-4971-aad9-ae77f3525738,Type of consultation,نوع الاستشارة,Coded,Type of consultation - MHPSS baseline,,,radio,,,,
-History Test,,History of Mental Disorder,تاريخ الاضرابات النفسية,d300cf49-11f1-4a13-bd36-70a4282e923c,Does the patient have a previous mental disorder diagnosis?,هل لدى المريض تشخيص سابق باضطراب نفسي؟,Coded,Yes-no,,,radio,,,,

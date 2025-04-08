@@ -9,6 +9,10 @@ type SheetData = {
   [key: string]: any[][];
 };
 
+type SheetVerificationMap = {
+  [sheetName: string]: any; // Verification data for each sheet
+};
+
 export default function ExcelViewer() {
   const [file, setFile] = useState<File | null>(null);
   const [sheetData, setSheetData] = useState<SheetData>({});
@@ -17,20 +21,33 @@ export default function ExcelViewer() {
   const [headers, setHeaders] = useState<string[]>([]);
   const [colWidths, setColWidths] = useState<number[]>([]);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [sheetVerifications, setSheetVerifications] = useState<SheetVerificationMap>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Function to load the example file
+  const loadExampleFile = async () => {
+    try {
+      console.log('Loading metadata-example.xlsx file...');
+      // Add cache-busting query parameter to ensure we get the latest version
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/metadata-example.xlsx?t=${timestamp}`, {
+        cache: 'no-store' // Tell the browser not to use cached version
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      parseExcel(arrayBuffer, false); // Don't trigger verification automatically
+      console.log('Successfully loaded metadata-example.xlsx file');
+    } catch (error) {
+      console.error('Error loading example file:', error);
+    }
+  };
 
   // Load the example file automatically on component mount
   useEffect(() => {
-    const loadExampleFile = async () => {
-      try {
-        const response = await fetch('/metadata-example.xlsx');
-        const arrayBuffer = await response.arrayBuffer();
-        parseExcel(arrayBuffer);
-      } catch (error) {
-        console.error('Error loading example file:', error);
-      }
-    };
-
     loadExampleFile();
   }, []);
 
@@ -42,15 +59,17 @@ export default function ExcelViewer() {
       reader.onload = (e) => {
         const data = e.target?.result;
         if (data) {
-          parseExcel(data as ArrayBuffer);
+          parseExcel(data as ArrayBuffer, false); // Don't trigger verification automatically
         }
       };
       reader.readAsArrayBuffer(selectedFile);
     }
   };
 
-  const parseExcel = (data: ArrayBuffer) => {
-    setIsVerifying(true);
+  const parseExcel = (data: ArrayBuffer, triggerVerification: boolean = true) => {
+    if (triggerVerification) {
+      setIsVerifying(true);
+    }
     const workbook = XLSX.read(data, { type: 'array' });
     const sheets: SheetData = {};
     const names: string[] = workbook.SheetNames;
@@ -82,7 +101,6 @@ export default function ExcelViewer() {
   };
 
   const handleSheetChange = (sheetName: string) => {
-    setIsVerifying(true);
     setActiveSheet(sheetName);
 
     // Update headers when changing sheets
@@ -104,6 +122,22 @@ export default function ExcelViewer() {
     }
   };
 
+  // Function to manually trigger verification
+  const triggerVerification = () => {
+    console.log('Manual verification triggered');
+    setIsVerifying(true);
+  };
+
+  // Handle verification completion
+  const handleVerificationComplete = (sheetName: string, verificationData: any) => {
+    console.log(`Verification completed for sheet: ${sheetName}`);
+    setSheetVerifications(prev => ({
+      ...prev,
+      [sheetName]: verificationData
+    }));
+    setIsVerifying(false);
+  };
+
   return (
     <div className="flex flex-col w-full">
       <div className="mb-4 flex items-center">
@@ -122,6 +156,14 @@ export default function ExcelViewer() {
         />
         {file && <span className="text-gray-700">{file.name}</span>}
         {!file && sheetNames.length > 0 && <span className="text-gray-700">metadata-example.xlsx (loaded automatically)</span>}
+
+        <button
+          onClick={triggerVerification}
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ml-4"
+          disabled={isVerifying}
+        >
+          {isVerifying ? 'Verifying...' : 'Verify Metadata'}
+        </button>
       </div>
 
       {sheetNames.length > 0 && (
@@ -144,6 +186,10 @@ export default function ExcelViewer() {
                 data={sheetData[activeSheet].slice(1)} // Skip header row
                 headers={headers}
                 colWidths={colWidths}
+                isVerifying={isVerifying}
+                verificationData={sheetVerifications[activeSheet]}
+                sheetName={activeSheet}
+                onVerificationComplete={handleVerificationComplete}
               />
             </>
           )}
