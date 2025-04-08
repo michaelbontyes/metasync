@@ -49,6 +49,16 @@ export interface VerificationResult {
       datatype?: string;
       details?: any;
     };
+    o3formsDev?: {
+      exists: boolean;
+      datatype?: string;
+      details?: any;
+    };
+    o3formsUat?: {
+      exists: boolean;
+      datatype?: string;
+      details?: any;
+    };
   };
   expectedDatatype?: string;
   datatypeMatch: boolean;
@@ -230,12 +240,20 @@ export async function verifyUUID(uuid: string, expectedDatatype?: string): Promi
     verifyUUIDInOpenMRSUat(uuid)
   ]);
 
+  // For O3forms, we'll set placeholder values since they're verified separately
+  // This ensures the tooltip shows all environments consistently
+  const o3formsDev: { exists: boolean; datatype?: string } = { exists: false };
+  const o3formsUat: { exists: boolean; datatype?: string } = { exists: false };
+
   // Determine if datatypes match across all sources
   const datatypes = [
     oclSource.exists ? oclSource.datatype : null,
     oclCollection.exists ? oclCollection.datatype : null,
     openmrsDev.exists ? openmrsDev.datatype : null,
-    openmrsUat.exists ? openmrsUat.datatype : null
+    openmrsUat.exists ? openmrsUat.datatype : null,
+    // Include O3forms datatypes if they exist
+    o3formsDev.exists && o3formsDev.datatype ? o3formsDev.datatype : null,
+    o3formsUat.exists && o3formsUat.datatype ? o3formsUat.datatype : null
   ].filter(Boolean);
 
   log(`Found datatypes for UUID ${uuid}:`, datatypes);
@@ -245,7 +263,7 @@ export async function verifyUUID(uuid: string, expectedDatatype?: string): Promi
     ? datatypes.some(dt => dt && dt.toLowerCase() === expectedDatatype.toLowerCase())
     : true;
 
-  const isValid = oclSource.exists || oclCollection.exists || openmrsDev.exists || openmrsUat.exists;
+  const isValid = oclSource.exists || oclCollection.exists || openmrsDev.exists || openmrsUat.exists || o3formsDev.exists || o3formsUat.exists;
   log(`Verification result for UUID ${uuid}: ${isValid ? 'Valid' : 'Invalid'}, datatype match: ${datatypeMatch}`);
 
   return {
@@ -255,7 +273,9 @@ export async function verifyUUID(uuid: string, expectedDatatype?: string): Promi
       oclSource: oclSource.exists ? oclSource : undefined,
       oclCollection: oclCollection.exists ? oclCollection : undefined,
       openmrsDev: openmrsDev.exists ? openmrsDev : undefined,
-      openmrsUat: openmrsUat.exists ? openmrsUat : undefined
+      openmrsUat: openmrsUat.exists ? openmrsUat : undefined,
+      o3formsDev: o3formsDev.exists ? o3formsDev : undefined,
+      o3formsUat: o3formsUat.exists ? o3formsUat : undefined
     },
     expectedDatatype,
     datatypeMatch

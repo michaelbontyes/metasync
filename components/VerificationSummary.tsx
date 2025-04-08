@@ -33,6 +33,8 @@ type SummaryStats = {
   oclCollection: EnvironmentStats;
   openmrsDev: EnvironmentStats;
   openmrsUat: EnvironmentStats;
+  o3formsDev: EnvironmentStats;
+  o3formsUat: EnvironmentStats;
 
   // Computed totals
   total: number;
@@ -80,7 +82,9 @@ export default function VerificationSummary({ verificationData, isVerifying, all
         oclSource: { total: 0, found: 0, notFound: 0, percentage: 0 },
         oclCollection: { total: 0, found: 0, notFound: 0, percentage: 0 },
         openmrsDev: { total: 0, found: 0, notFound: 0, percentage: 0 },
-        openmrsUat: { total: 0, found: 0, notFound: 0, percentage: 0 }
+        openmrsUat: { total: 0, found: 0, notFound: 0, percentage: 0 },
+        o3formsDev: { total: 0, found: 0, notFound: 0, percentage: 0 },
+        o3formsUat: { total: 0, found: 0, notFound: 0, percentage: 0 }
       };
     }
 
@@ -106,7 +110,9 @@ export default function VerificationSummary({ verificationData, isVerifying, all
       oclSource: { total: 0, found: 0, notFound: 0, percentage: 0 },
       oclCollection: { total: 0, found: 0, notFound: 0, percentage: 0 },
       openmrsDev: { total: 0, found: 0, notFound: 0, percentage: 0 },
-      openmrsUat: { total: 0, found: 0, notFound: 0, percentage: 0 }
+      openmrsUat: { total: 0, found: 0, notFound: 0, percentage: 0 },
+      o3formsDev: { total: 0, found: 0, notFound: 0, percentage: 0 },
+      o3formsUat: { total: 0, found: 0, notFound: 0, percentage: 0 }
     };
 
     // Separate UUID cells and datatype cells
@@ -139,60 +145,107 @@ export default function VerificationSummary({ verificationData, isVerifying, all
         stats.openmrsDev.notFound++;
         stats.openmrsUat.total++;
         stats.openmrsUat.notFound++;
+        stats.o3formsDev.total++;
+        stats.o3formsDev.notFound++;
+        stats.o3formsUat.total++;
+        stats.o3formsUat.notFound++;
 
         return; // Skip the rest of the processing for this cell
       }
 
-      // OCL Source
-      stats.oclSource.total++;
-      if (details.sources.oclSource && details.sources.oclSource.exists) {
-        stats.oclSource.found++;
-      } else {
-        stats.oclSource.notFound++;
-      }
+      // Check if this is an O3 form verification result (has foundInForm property)
+      const isO3FormVerification = 'foundInForm' in details;
 
-      // OCL Collection
-      stats.oclCollection.total++;
-      if (details.sources.oclCollection && details.sources.oclCollection.exists) {
-        stats.oclCollection.found++;
-      } else {
-        stats.oclCollection.notFound++;
-      }
+      if (isO3FormVerification) {
+        // For O3 form verification, we only have foundInForm property
+        // We'll count it as found in all systems if it's found in the form
+        const foundInForm = details.foundInForm;
 
-      // OpenMRS DEV
-      stats.openmrsDev.total++;
-      if (details.sources.openmrsDev && details.sources.openmrsDev.exists) {
-        stats.openmrsDev.found++;
-      } else {
-        stats.openmrsDev.notFound++;
-      }
+        // Update all environment stats
+        stats.oclSource.total++;
+        stats.oclCollection.total++;
+        stats.openmrsDev.total++;
+        stats.openmrsUat.total++;
+        stats.o3formsDev.total++;
+        stats.o3formsUat.total++;
 
-      // OpenMRS UAT
-      stats.openmrsUat.total++;
-      if (details.sources.openmrsUat && details.sources.openmrsUat.exists) {
-        stats.openmrsUat.found++;
-      } else {
-        stats.openmrsUat.notFound++;
-      }
+        // Check if this is an O3 form verification result with environments property
+        if (details.environments) {
+          // Update O3 form environment stats
+          if (details.environments.o3formsDev.exists) {
+            stats.o3formsDev.found++;
+          } else {
+            stats.o3formsDev.notFound++;
+          }
 
-      // Track various verification statuses
-      if (details.isValid) {
-        stats.uuidFoundInAll++; // Found in all systems
-        stats.uuidFoundInAny++;
-      } else if (cell.hasDiscrepancy) {
-        stats.uuidDiscrepancies++; // Found in some systems but not all
-        stats.uuidFoundInAny++;
+          if (details.environments.o3formsUat.exists) {
+            stats.o3formsUat.found++;
+          } else {
+            stats.o3formsUat.notFound++;
+          }
+
+          // For standard environments, use the foundInForm flag
+          if (foundInForm) {
+            stats.oclSource.found++;
+            stats.oclCollection.found++;
+            stats.openmrsDev.found++;
+            stats.openmrsUat.found++;
+            stats.uuidFoundInAll++;
+            stats.uuidFoundInAny++;
+          } else {
+            stats.oclSource.notFound++;
+            stats.oclCollection.notFound++;
+            stats.openmrsDev.notFound++;
+            stats.openmrsUat.notFound++;
+            stats.uuidNotFoundInAny++;
+          }
+        } else {
+          // Fallback for older verification results without environments
+          if (foundInForm) {
+            stats.oclSource.found++;
+            stats.oclCollection.found++;
+            stats.openmrsDev.found++;
+            stats.openmrsUat.found++;
+            stats.o3formsDev.found++;
+            stats.o3formsUat.found++;
+            stats.uuidFoundInAll++;
+            stats.uuidFoundInAny++;
+          } else {
+            stats.oclSource.notFound++;
+            stats.oclCollection.notFound++;
+            stats.openmrsDev.notFound++;
+            stats.openmrsUat.notFound++;
+            stats.o3formsDev.notFound++;
+            stats.o3formsUat.notFound++;
+            stats.uuidNotFoundInAny++;
+          }
+        }
       } else {
-        stats.uuidNotFoundInAny++; // Not found in any system
+        // This block is now handled above
       }
     });
 
     // Process datatype cells
     datatypeCells.forEach((cell: any) => {
-      if (cell.isValid) {
-        stats.datatypeMatched++;
+      const details = cell.verificationDetails;
+
+      // Check if this is an O3 form verification result
+      const isO3FormVerification = 'foundInForm' in details;
+
+      if (isO3FormVerification) {
+        // For O3 form verification, we use datatypeMatch property
+        if (details.datatypeMatch) {
+          stats.datatypeMatched++;
+        } else {
+          stats.datatypeMismatched++;
+        }
       } else {
-        stats.datatypeMismatched++;
+        // Standard verification
+        if (cell.isValid) {
+          stats.datatypeMatched++;
+        } else {
+          stats.datatypeMismatched++;
+        }
       }
     });
 
@@ -208,6 +261,15 @@ export default function VerificationSummary({ verificationData, isVerifying, all
     }
     if (stats.openmrsUat.total > 0) {
       stats.openmrsUat.percentage = Math.round((stats.openmrsUat.found / stats.openmrsUat.total) * 100);
+    }
+
+    // Calculate percentages for O3 form environments
+    if (stats.o3formsDev.total > 0) {
+      stats.o3formsDev.percentage = Math.round((stats.o3formsDev.found / stats.o3formsDev.total) * 100);
+    }
+
+    if (stats.o3formsUat.total > 0) {
+      stats.o3formsUat.percentage = Math.round((stats.o3formsUat.found / stats.o3formsUat.total) * 100);
     }
 
     // Calculate computed totals
@@ -601,6 +663,92 @@ export default function VerificationSummary({ verificationData, isVerifying, all
                                 ></div>
                               </div>
                               {Math.round((stats.datatypeMatched * 100) / stats.openmrsUat.found)}%
+                            </>
+                          ) : (
+                            <span className="text-gray-400">N/A</span>
+                          )}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1">O3forms DEV</td>
+                        <td className="py-1 text-right">
+                          <span className="text-green-600">{stats.o3formsDev.found}</span>
+                          <span className="text-gray-400"> / </span>
+                          <span>{stats.o3formsDev.total}</span>
+                        </td>
+                        <td className="py-1 text-right">
+                          <div className="inline-block w-8 h-1.5 bg-gray-200 rounded-full mr-1">
+                            <div
+                              className="h-1.5 bg-green-600 rounded-full"
+                              style={{ width: `${stats.o3formsDev.percentage}%` }}
+                            ></div>
+                          </div>
+                          {stats.o3formsDev.percentage}%
+                        </td>
+                        <td className="py-1 text-right">
+                          {stats.datatypeTotal > 0 ? (
+                            <>
+                              <span className="text-green-600">{Math.round((stats.datatypeMatched * stats.o3formsDev.found) / stats.o3formsDev.total)}</span>
+                              <span className="text-gray-400"> / </span>
+                              <span>{stats.o3formsDev.found}</span>
+                            </>
+                          ) : (
+                            <span className="text-gray-400">N/A</span>
+                          )}
+                        </td>
+                        <td className="py-1 text-right">
+                          {stats.datatypeTotal > 0 && stats.o3formsDev.found > 0 ? (
+                            <>
+                              <div className="inline-block w-8 h-1.5 bg-gray-200 rounded-full mr-1">
+                                <div
+                                  className="h-1.5 bg-green-600 rounded-full"
+                                  style={{ width: `${Math.round((stats.datatypeMatched * 100) / stats.o3formsDev.found)}%` }}
+                                ></div>
+                              </div>
+                              {Math.round((stats.datatypeMatched * 100) / stats.o3formsDev.found)}%
+                            </>
+                          ) : (
+                            <span className="text-gray-400">N/A</span>
+                          )}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1">O3forms UAT</td>
+                        <td className="py-1 text-right">
+                          <span className="text-green-600">{stats.o3formsUat.found}</span>
+                          <span className="text-gray-400"> / </span>
+                          <span>{stats.o3formsUat.total}</span>
+                        </td>
+                        <td className="py-1 text-right">
+                          <div className="inline-block w-8 h-1.5 bg-gray-200 rounded-full mr-1">
+                            <div
+                              className="h-1.5 bg-green-600 rounded-full"
+                              style={{ width: `${stats.o3formsUat.percentage}%` }}
+                            ></div>
+                          </div>
+                          {stats.o3formsUat.percentage}%
+                        </td>
+                        <td className="py-1 text-right">
+                          {stats.datatypeTotal > 0 ? (
+                            <>
+                              <span className="text-green-600">{Math.round((stats.datatypeMatched * stats.o3formsUat.found) / stats.o3formsUat.total)}</span>
+                              <span className="text-gray-400"> / </span>
+                              <span>{stats.o3formsUat.found}</span>
+                            </>
+                          ) : (
+                            <span className="text-gray-400">N/A</span>
+                          )}
+                        </td>
+                        <td className="py-1 text-right">
+                          {stats.datatypeTotal > 0 && stats.o3formsUat.found > 0 ? (
+                            <>
+                              <div className="inline-block w-8 h-1.5 bg-gray-200 rounded-full mr-1">
+                                <div
+                                  className="h-1.5 bg-green-600 rounded-full"
+                                  style={{ width: `${Math.round((stats.datatypeMatched * 100) / stats.o3formsUat.found)}%` }}
+                                ></div>
+                              </div>
+                              {Math.round((stats.datatypeMatched * 100) / stats.o3formsUat.found)}%
                             </>
                           ) : (
                             <span className="text-gray-400">N/A</span>

@@ -28,6 +28,7 @@ import 'handsontable/styles/ht-theme-main.min.css';
 
 // Import verification services
 import { verifySheetData, SheetVerificationData } from '@/services/verificationService';
+import { verifySheetAgainstO3Form, O3FormVerificationData } from '@/services/o3FormVerificationService';
 import { VerifiedCell } from './VerifiedCell';
 
 // Enable detailed logging
@@ -60,15 +61,15 @@ type GridProps = {
   headers?: string[];
   colWidths?: number[];
   isVerifying?: boolean;
-  verificationData?: SheetVerificationData;
+  verificationData?: SheetVerificationData | O3FormVerificationData;
   sheetName?: string;
-  onVerificationComplete?: (sheetName: string, verificationData: SheetVerificationData) => void;
+  onVerificationComplete?: (sheetName: string, verificationData: any) => void;
   onVerificationProgress?: (progress: number) => void;
 };
 
 export default function Grid(props: GridProps) {
   // State for verification data
-  const [localVerificationData, setLocalVerificationData] = useState<SheetVerificationData>({});
+  const [localVerificationData, setLocalVerificationData] = useState<SheetVerificationData | O3FormVerificationData>({});
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
   // Use provided verification data if available, otherwise use local state
@@ -100,7 +101,7 @@ export default function Grid(props: GridProps) {
 
     log(`Starting verification for ${props.data.length} rows of data`);
     setIsVerifying(true);
-    let verificationResults: SheetVerificationData = {};
+    let verificationResults: SheetVerificationData | O3FormVerificationData = {};
 
     try {
       log('Calling verifySheetData...');
@@ -114,13 +115,30 @@ export default function Grid(props: GridProps) {
       const totalRows = props.data.length;
       const updateInterval = Math.max(1, Math.floor(totalRows / 10)); // Update progress every 10% of rows
 
-      // Use a modified version of verifySheetData that reports progress
-      verificationResults = await verifySheetData(props.data, props.headers, (rowIndex) => {
-        if (props.onVerificationProgress && rowIndex % updateInterval === 0) {
-          const progress = Math.min(90, 10 + Math.round((rowIndex / totalRows) * 80));
-          props.onVerificationProgress(progress);
-        }
-      });
+      // Determine if this is an O3 form sheet or a standard sheet
+      // We'll use a more specific heuristic to avoid misclassifying sheets
+      const isO3FormSheet = props.sheetName?.toLowerCase().includes('form') || props.sheetName?.toLowerCase().includes('translation');
+      log(`Sheet ${props.sheetName} is ${isO3FormSheet ? 'an O3 form/translation sheet' : 'a standard sheet'}`);
+
+      if (isO3FormSheet) {
+        // Use O3 form verification
+        log('Using O3 form verification for sheet:', props.sheetName);
+        verificationResults = await verifySheetAgainstO3Form(props.data, props.headers, (rowIndex) => {
+          if (props.onVerificationProgress && rowIndex % updateInterval === 0) {
+            const progress = Math.min(90, 10 + Math.round((rowIndex / totalRows) * 80));
+            props.onVerificationProgress(progress);
+          }
+        });
+      } else {
+        // Use standard verification
+        log('Using standard verification for sheet:', props.sheetName);
+        verificationResults = await verifySheetData(props.data, props.headers, (rowIndex) => {
+          if (props.onVerificationProgress && rowIndex % updateInterval === 0) {
+            const progress = Math.min(90, 10 + Math.round((rowIndex / totalRows) * 80));
+            props.onVerificationProgress(progress);
+          }
+        });
+      }
 
       log(`Verification complete, received data for ${Object.keys(verificationResults).length} cells`);
       setLocalVerificationData(verificationResults);

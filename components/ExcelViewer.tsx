@@ -5,13 +5,22 @@ import * as XLSX from 'xlsx';
 import Grid from './Grid';
 import SheetTabs from './SheetTabs';
 import VerificationSummary from './VerificationSummary';
+import { SheetVerificationData } from '@/services/verificationService';
+import { O3FormVerificationData } from '@/services/o3FormVerificationService';
+
+// Sheet types for different verification methods
+enum SheetType {
+  STANDARD = 'standard',
+  O3_FORM = 'o3form',
+  TRANSLATION = 'translation'
+}
 
 type SheetData = {
   [key: string]: any[][];
 };
 
 type SheetVerificationMap = {
-  [sheetName: string]: any; // Verification data for each sheet
+  [sheetName: string]: SheetVerificationData | O3FormVerificationData;
 };
 
 export default function ExcelViewer() {
@@ -24,6 +33,7 @@ export default function ExcelViewer() {
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verificationProgress, setVerificationProgress] = useState<number>(0);
   const [sheetVerifications, setSheetVerifications] = useState<SheetVerificationMap>({});
+  const [sheetTypes, setSheetTypes] = useState<{[sheetName: string]: SheetType}>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Function to load the example file
@@ -75,15 +85,30 @@ export default function ExcelViewer() {
     const workbook = XLSX.read(data, { type: 'array' });
     const sheets: SheetData = {};
     const names: string[] = workbook.SheetNames;
+    const types: {[sheetName: string]: SheetType} = {};
 
     names.forEach((sheetName) => {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       sheets[sheetName] = jsonData as any[][];
+
+      // Determine sheet type based on name
+      if (sheetName.toLowerCase().includes('form')) {
+        types[sheetName] = SheetType.O3_FORM;
+        console.log(`Sheet ${sheetName} identified as O3_FORM type`);
+      } else if (sheetName.toLowerCase().includes('translation')) {
+        types[sheetName] = SheetType.TRANSLATION;
+        console.log(`Sheet ${sheetName} identified as TRANSLATION type`);
+      } else {
+        // Default to standard verification for all other sheets
+        types[sheetName] = SheetType.STANDARD;
+        console.log(`Sheet ${sheetName} identified as STANDARD type`);
+      }
     });
 
     setSheetData(sheets);
     setSheetNames(names);
+    setSheetTypes(types);
 
     if (names.length > 0) {
       setActiveSheet(names[0]);
@@ -148,8 +173,9 @@ export default function ExcelViewer() {
 
     // We'll verify sheets without changing the UI
 
-    // Import the verification service directly to avoid UI flickering
+    // Import the verification services directly to avoid UI flickering
     const { verifySheetData } = await import('@/services/verificationService');
+    const { verifySheetAgainstO3Form } = await import('@/services/o3FormVerificationService');
 
     // Create a function to verify a sheet without changing the UI
     const verifySheet = async (sheetName: string) => {
@@ -166,9 +192,19 @@ export default function ExcelViewer() {
       const headers = currentSheetData[0].map(String);
       const data = currentSheetData.slice(1);
 
-      // Perform verification
+      // Perform verification based on sheet type
       try {
-        const results = await verifySheetData(data, headers);
+        let results;
+        const sheetType = sheetTypes[sheetName] || SheetType.STANDARD;
+
+        if (sheetType === SheetType.O3_FORM || sheetType === SheetType.TRANSLATION) {
+          console.log(`Using O3 form verification for sheet: ${sheetName}`);
+          results = await verifySheetAgainstO3Form(data, headers);
+        } else {
+          console.log(`Using standard verification for sheet: ${sheetName}`);
+          results = await verifySheetData(data, headers);
+        }
+
         console.log(`Verification completed for sheet: ${sheetName}`);
 
         // Store verification results

@@ -1,10 +1,11 @@
 'use client';
 
 import { CellVerificationData } from '@/services/verificationService';
+import { O3FormCellVerificationData } from '@/services/o3FormVerificationService';
 
 interface VerifiedCellProps {
   value: string;
-  verificationData?: CellVerificationData;
+  verificationData?: CellVerificationData | O3FormCellVerificationData;
   row: number;
   col: number;
   prop: number | string;

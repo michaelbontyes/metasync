@@ -259,6 +259,7 @@ function createTooltipContent(result: VerificationResult): string {
 
   content += '\nVerification Sources:\n';
 
+  // OCL Source
   if (result.sources.oclSource) {
     content += `- OCL Source: Found\n`;
     if (result.sources.oclSource.datatype) {
@@ -268,6 +269,7 @@ function createTooltipContent(result: VerificationResult): string {
     content += `- OCL Source: Not Found\n`;
   }
 
+  // OCL Collection
   if (result.sources.oclCollection) {
     content += `- OCL Collection: Found\n`;
     if (result.sources.oclCollection.datatype) {
@@ -277,6 +279,7 @@ function createTooltipContent(result: VerificationResult): string {
     content += `- OCL Collection: Not Found\n`;
   }
 
+  // OpenMRS DEV
   if (result.sources.openmrsDev) {
     content += `- OpenMRS DEV: Found\n`;
     if (result.sources.openmrsDev.datatype) {
@@ -286,6 +289,7 @@ function createTooltipContent(result: VerificationResult): string {
     content += `- OpenMRS DEV: Not Found\n`;
   }
 
+  // OpenMRS UAT
   if (result.sources.openmrsUat) {
     content += `- OpenMRS UAT: Found\n`;
     if (result.sources.openmrsUat.datatype) {
@@ -294,6 +298,28 @@ function createTooltipContent(result: VerificationResult): string {
   } else {
     content += `- OpenMRS UAT: Not Found\n`;
   }
+
+  // O3forms DEV
+  if (result.sources.o3formsDev) {
+    content += `- O3forms DEV: ${result.sources.o3formsDev.exists ? 'Found' : 'Not Found'}\n`;
+    if (result.sources.o3formsDev.datatype) {
+      content += `  Datatype: ${result.sources.o3formsDev.datatype}\n`;
+    }
+  } else {
+    content += `- O3forms DEV: Not Checked\n`;
+  }
+
+  // O3forms UAT
+  if (result.sources.o3formsUat) {
+    content += `- O3forms UAT: ${result.sources.o3formsUat.exists ? 'Found' : 'Not Found'}\n`;
+    if (result.sources.o3formsUat.datatype) {
+      content += `  Datatype: ${result.sources.o3formsUat.datatype}\n`;
+    }
+  } else {
+    content += `- O3forms UAT: Not Checked\n`;
+  }
+
+
 
   log(`Tooltip content created with ${content.split('\n').length} lines`);
   return content;
