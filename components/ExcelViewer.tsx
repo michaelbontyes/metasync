@@ -134,6 +134,62 @@ export default function ExcelViewer() {
     setIsVerifying(true);
   };
 
+  // Function to manually trigger verification for all sheets
+  const triggerVerificationAllSheets = async () => {
+    if (sheetNames.length === 0) {
+      console.log('No sheets to verify');
+      return;
+    }
+
+    console.log('Manual verification triggered for all sheets');
+    setIsVerifying(true);
+
+    // We'll verify sheets without changing the UI
+
+    // Import the verification service directly to avoid UI flickering
+    const { verifySheetData } = await import('@/services/verificationService');
+
+    // Create a function to verify a sheet without changing the UI
+    const verifySheet = async (sheetName: string) => {
+      console.log(`Starting verification for sheet: ${sheetName}`);
+
+      // Get the sheet data
+      const currentSheetData = sheetData[sheetName];
+      if (!currentSheetData || currentSheetData.length <= 1) {
+        console.log(`Sheet ${sheetName} has no data, skipping`);
+        return;
+      }
+
+      // Create a temporary Grid component just for verification
+      const headers = currentSheetData[0].map(String);
+      const data = currentSheetData.slice(1);
+
+      // Perform verification
+      try {
+        const results = await verifySheetData(data, headers);
+        console.log(`Verification completed for sheet: ${sheetName}`);
+
+        // Store verification results
+        setSheetVerifications(prev => ({
+          ...prev,
+          [sheetName]: results
+        }));
+      } catch (error) {
+        console.error(`Error verifying sheet ${sheetName}:`, error);
+      }
+    };
+
+    // Process each sheet sequentially
+    for (const sheetName of sheetNames) {
+      await verifySheet(sheetName);
+      // Small delay between sheets to avoid overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // Reset verification state when all sheets are processed
+    setIsVerifying(false);
+  };
+
   // Handle verification completion
   const handleVerificationComplete = (sheetName: string, verificationData: any) => {
     console.log(`Verification completed for sheet: ${sheetName}`);
@@ -168,7 +224,15 @@ export default function ExcelViewer() {
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ml-4"
           disabled={isVerifying}
         >
-          {isVerifying ? 'Verifying...' : 'Verify Metadata'}
+          {isVerifying ? 'Verifying...' : 'Verify Current Tab'}
+        </button>
+
+        <button
+          onClick={triggerVerificationAllSheets}
+          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded ml-2"
+          disabled={isVerifying}
+        >
+          {isVerifying ? 'Verifying...' : 'Verify All Tabs'}
         </button>
       </div>
 
@@ -177,6 +241,8 @@ export default function ExcelViewer() {
           {activeSheet && sheetData[activeSheet] && (
             <VerificationSummary
               verificationData={sheetVerifications[activeSheet]}
+              allSheetsData={sheetVerifications}
+              currentSheet={activeSheet}
               isVerifying={isVerifying}
             />
           )}
