@@ -84,6 +84,9 @@ export default function Grid(props: GridProps) {
     const cellKey = `${row}:${col}`;
     const cellVerificationData = verificationData[cellKey];
 
+    // Always ensure text is black for readability
+    TD.style.color = '#000';
+
     // Store verification content in the cell's dataset for tooltip access
     if (cellVerificationData?.tooltipContent) {
       TD.dataset.verificationContent = cellVerificationData.tooltipContent;
@@ -101,6 +104,9 @@ export default function Grid(props: GridProps) {
       TD,
       cellProperties
     });
+
+    // Create a text node with the value and append it to the cell
+    TD.textContent = value !== null && value !== undefined ? String(value) : '';
 
     return TD;
   };

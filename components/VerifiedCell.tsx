@@ -31,13 +31,12 @@ export function VerifiedCell({
     TD.style.backgroundColor = verificationData.isValid
       ? 'rgba(0, 255, 0, 0.2)' // Light green for valid
       : 'rgba(255, 0, 0, 0.2)'; // Light red for invalid
-
-    // Ensure text color is black for readability
-    TD.style.color = '#000';
   } else {
     TD.style.backgroundColor = '';
-    TD.style.color = ''; // Reset to default color
   }
+
+  // Always ensure text color is black for readability
+  TD.style.color = '#000';
 
   // Set up tooltip events
   if (verificationData?.tooltipContent) {
